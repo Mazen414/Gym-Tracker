@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Gym Tracker</title>
+</head>
+<body>
+    <h2>Log an Exercise</h2>
+    
+    <!-- The main form -->
+    <form id="workout-form">
+        <label for="exercise-type">Exercise Type:</label>
+        <select id="exercise-type">
+            <option value="strength">Weightlifting</option>
+            <option value="cardio">Cardio</option>
+        </select>
+
+        <!-- This empty div is our target for the template literals -->
+        <div id="dynamic-inputs"></div>
+
+        <button type="submit">Save Exercise</button>
+    </form>
+
+    <script src="app.js"></script>
+</body>
+</html>
