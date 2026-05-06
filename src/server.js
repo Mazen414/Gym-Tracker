@@ -1,33 +1,32 @@
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
-const { connectDB } = require('./services/db');
+const { initSchema } = require('./services/db');
 
-// Initialize the Express app
+// Initialize the Express application
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// --- Middleware ---
-app.use(cors()); // Allows your frontend to communicate securely with your API
-app.use(express.json()); // Automatically parses incoming JSON data from your fetch requests
-
-// Serve your SPA: This tells Express to serve your index.html and app.js from the public folder
+// Middleware to serve your frontend files from the 'public' folder
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.json());
 
-// --- API Routes (We will add more later) ---
-// A simple health check route to test our server
-app.get('/api/health', (req, res) => {
-    res.json({ message: 'Gym Tracker API is running smoothly!' });
-});
+// The "Fail-Fast" startup function from your friend's code
+async function start() {
+  try {
+    // 1. Try to connect and initialize the database first
+    await initSchema();
+    console.log('Connected to SQL Server — tables ready.');
+    
+    // 2. If the database works, start the web server
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    // 3. If the database fails, log the error and crash cleanly
+    console.error('Failed to start:', err.message);
+    process.exit(1);
+  }
+}
 
-// Explicitly serve the index.html file when someone visits the root URL
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// --- Start the Server ---
-app.listen(PORT, async () => {
-    console.log(`Server is locked in and running on http://localhost:${PORT}`);
-    // Test the database connection when the server starts
-    await connectDB(); 
-});
+// Kick off the application
+start();
