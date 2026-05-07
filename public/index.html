@@ -2,24 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Gym Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Tracker Pro</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Log an Exercise</h2>
-    
-    <!-- The main form -->
-    <form id="workout-form">
-        <label for="exercise-type">Exercise Type:</label>
-        <select id="exercise-type">
-            <option value="strength">Weightlifting</option>
-            <option value="cardio">Cardio</option>
-        </select>
+    <header>
+        <h1>🏋️ Gym Tracker</h1>
+    </header>
 
-        <!-- This empty div is our target for the template literals -->
-        <div id="dynamic-inputs"></div>
+    <main>
+        <section class="card">
+            <h2>1. Log New Workout Session</h2>
+            <form id="workout-form">
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" placeholder="How did it feel today?"></textarea>
+                </div>
+                <button type="submit">Create Session</button>
+            </form>
+        </section>
 
-        <button type="submit">Save Exercise</button>
-    </form>
+        <section class="card" style="border-top: 4px solid #2980b9;">
+            <h2>2. Add Exercise to a Session</h2>
+            <form id="exercise-form">
+                <div class="form-group">
+                    <label for="target-workout">Select Workout Session:</label>
+                    <select id="target-workout" required>
+                        <option value="" disabled selected>Loading workouts...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="exercise-type">Exercise Type:</label>
+                    <select id="exercise-type">
+                        <option value="strength">Weightlifting (Strength)</option>
+                        <option value="cardio">Cardio</option>
+                    </select>
+                </div>
+
+                <div id="dynamic-inputs"></div>
+
+                <button type="submit">Save Exercise</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Recent Workouts</h2>
+            <div id="workout-list">
+                <p>Loading workouts...</p>
+            </div>
+        </section>
+    </main>
 
     <script src="app.js"></script>
 </body>
