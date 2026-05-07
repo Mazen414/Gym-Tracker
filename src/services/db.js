@@ -1,20 +1,22 @@
 const sql = require('mssql');
 
 const config = {
-  server: 'localhost\\SQLEXPRESS',
+  // Use 127.0.0.1 to bypass Windows localhost mapping issues
+  server: '127.0.0.1', 
   authentication: {
     type: 'default',
     options: {
-      userName: 'gym_node_user',      // اليوزر اللي عملناه في SSMS
+      userName: 'gym_node_user',      
       password: 'GymTracker@2026',   
     },
   },
   options: {
-    database: 'GymTrackerDB',      
+    // ⚠️ REPLACE 50214 WITH THE EXACT NUMBER YOU FOUND IN STEP 1
+    port: 1433, 
+    database: 'GymTrackerDB',        
     trustServerCertificate: true,
     encrypt: true,
     enableArithAbort: true,
-    connectionTimeout: 5000
   },
 };
 

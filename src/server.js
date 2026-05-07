@@ -1,32 +1,73 @@
 const express = require('express');
 const path = require('path');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 const { initSchema } = require('./services/db');
 
-// Initialize the Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to serve your frontend files from the 'public' folder
+// --- SWAGGER CONFIGURATION ---
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Gym Tracker API',
+      version: '1.0.0',
+      description: 'SQL Server Backend for Gym Workout Tracking',
+      contact: {
+        name: 'Developer'
+      },
+      servers: [{ url: `http://localhost:${PORT}` }]
+    },
+  },
+  // This tells Swagger to look for documentation in this file and any file in routes
+  apis: [__filename, './src/routes/*.js'], 
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// --- MIDDLEWARE ---
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 
-// The "Fail-Fast" startup function from your friend's code
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Verify server health
+ *     description: Returns a simple message to confirm the server is running.
+ *     responses:
+ *       200:
+ *         description: Server is healthy.
+ */
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP', message: 'Gym Tracker Backend is active' });
+});
+
+// --- STARTUP LOGIC ---
 async function start() {
   try {
-    // 1. Try to connect and initialize the database first
+    // 1. Initialize Database Schema
     await initSchema();
     console.log('Connected to SQL Server — tables ready.');
     
-    // 2. If the database works, start the web server
+    // 2. Start Express Server
     app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
+      console.log(`
+🚀 Server running at http://localhost:${PORT}
+- Static files: http://localhost:${PORT}
+- API Docs:    http://localhost:${PORT}/api-docs
+      `);
     });
   } catch (err) {
-    // 3. If the database fails, log the error and crash cleanly
     console.error('Failed to start:', err.message);
     process.exit(1);
   }
 }
 
-// Kick off the application
+const workoutRoutes = require('./routes/workouts');
+app.use('/api/workouts', workoutRoutes);
+
 start();
