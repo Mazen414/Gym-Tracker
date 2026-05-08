@@ -226,4 +226,47 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// PUT: Update an existing Strength exercise
+router.put('/:workoutId/strength/:exerciseId', async (req, res) => {
+  try {
+    const pool = await getPool();
+    await pool.request()
+      .input('exerciseId', req.params.exerciseId)
+      .input('name', req.body.exercise_name)
+      .input('sets', req.body.sets)
+      .input('reps', req.body.reps)
+      .input('weight', req.body.weight_kg)
+      .query(`
+        UPDATE Strength_Logs 
+        SET exercise_name = @name, sets = @sets, reps = @reps, weight_kg = @weight
+        WHERE id = @exerciseId
+      `);
+    res.status(200).json({ message: 'Strength exercise updated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update strength exercise' });
+  }
+});
+
+// PUT: Update an existing Cardio exercise
+router.put('/:workoutId/cardio/:exerciseId', async (req, res) => {
+  try {
+    const pool = await getPool();
+    await pool.request()
+      .input('exerciseId', req.params.exerciseId)
+      .input('name', req.body.exercise_name)
+      .input('duration', req.body.duration_minutes)
+      .input('distance', req.body.distance_km)
+      .query(`
+        UPDATE Cardio_Logs 
+        SET exercise_name = @name, duration_minutes = @duration, distance_km = @distance
+        WHERE id = @exerciseId
+      `);
+    res.status(200).json({ message: 'Cardio exercise updated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update cardio exercise' });
+  }
+});
+
 module.exports = router;
