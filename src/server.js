@@ -68,6 +68,8 @@ async function start() {
 }
 
 const workoutRoutes = require('./routes/workouts');
+const authRoutes = require('./routes/auth');
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/auth', authRoutes);
 
 start();
