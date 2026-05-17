@@ -7,8 +7,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>🏋️ Gym Tracker</h1>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 20px;">
+        <h1 style="margin: 0;">🏋️ Gym Tracker</h1>
+        <div>
+            <span id="user-greeting" style="margin-right: 15px; font-weight: bold;"></span>
+            <button onclick="logout()" style="background: #34495e; padding: 5px 10px; font-size: 14px;">Log Out</button>
+        </div>
     </header>
 
     <main>

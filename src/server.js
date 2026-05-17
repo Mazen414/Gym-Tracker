@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 
 // --- SWAGGER CONFIGURATION ---
 const swaggerOptions = {
-  swaggerDefinition: {
+  definition: {
     openapi: '3.0.0',
     info: {
       title: 'Gym Tracker API',
@@ -17,9 +17,21 @@ const swaggerOptions = {
       description: 'SQL Server Backend for Gym Workout Tracking',
       contact: {
         name: 'Developer'
-      },
-      servers: [{ url: `http://localhost:${PORT}` }]
+      }
     },
+    
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [{
+      bearerAuth: []
+    }]
   },
   // This tells Swagger to look for documentation in this file and any file in routes
   apis: [__filename, './src/routes/*.js'], 
@@ -32,15 +44,21 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 
+// --- ROUTES ---
+const workoutRoutes = require('./routes/workouts');
+const authRoutes = require('./routes/auth');
+app.use('/api/workouts', workoutRoutes);
+app.use('/api/auth', authRoutes);
+
 /**
  * @openapi
  * /health:
- *   get:
- *     summary: Verify server health
- *     description: Returns a simple message to confirm the server is running.
- *     responses:
- *       200:
- *         description: Server is healthy.
+ * get:
+ * summary: Verify server health
+ * description: Returns a simple message to confirm the server is running.
+ * responses:
+ * 200:
+ * description: Server is healthy.
  */
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', message: 'Gym Tracker Backend is active' });
@@ -66,10 +84,5 @@ async function start() {
     process.exit(1);
   }
 }
-
-const workoutRoutes = require('./routes/workouts');
-const authRoutes = require('./routes/auth');
-app.use('/api/workouts', workoutRoutes);
-app.use('/api/auth', authRoutes);
 
 start();

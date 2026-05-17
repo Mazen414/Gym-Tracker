@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gym Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        .toggle-link {
+            color: #2980b9;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+            margin-top: 15px;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏋️ Gym Tracker</h1>
+    </header>
+
+    <main class="auth-container">
+        <section class="card" id="login-section">
+            <h2 style="text-align: center;">Welcome Back</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="login-username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" style="width: 100%;">Log In</button>
+            </form>
+            <span class="toggle-link" onclick="toggleAuth()">Need an account? Sign Up</span>
+        </section>
+
+        <section class="card" id="register-section" style="display: none; border-top: 4px solid #27ae60;">
+            <h2 style="text-align: center;">Create Account</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label>Choose Username</label>
+                    <input type="text" id="register-username" required>
+                </div>
+                <div class="form-group">
+                    <label>Choose Password</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <button type="submit" style="width: 100%; background: #27ae60;">Sign Up</button>
+            </form>
+            <span class="toggle-link" onclick="toggleAuth()">Already have an account? Log In</span>
+        </section>
+    </main>
+
+    <script src="auth.js"></script>
+</body>
+</html>

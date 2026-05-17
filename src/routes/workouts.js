@@ -1,6 +1,10 @@
 const express = require('express');
-const router = express.Router();
 const { getPool } = require('../services/db');
+const authenticateToken = require('../middleware/authMiddleware');
+
+const router = express.Router();
+
+router.use(authenticateToken);
 
 /**
  * @openapi
@@ -65,6 +69,7 @@ const { getPool } = require('../services/db');
  * }
  */
 
+
 router.post('/', async (req, res) => {
   const { date, notes } = req.body;
   try {
@@ -72,7 +77,8 @@ router.post('/', async (req, res) => {
     await pool.request()
       .input('date', date)
       .input('notes', notes)
-      .query('INSERT INTO Workouts (date, notes) VALUES (@date, @notes)');
+      .input('userId', req.user.userId)
+      .query('INSERT INTO Workouts (date, notes, user_id) VALUES (@date, @notes, @userId)');
     res.status(201).json({ message: 'Workout logged successfully!' });
   } catch (err) {
     console.error(err);
@@ -83,7 +89,9 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request().query('SELECT * FROM Workouts ORDER BY date DESC');
+    const result = await pool.request()
+    .input('userId', req.user.userId)
+    .query('SELECT * FROM Workouts WHERE user_id = @userId ORDER BY date DESC');
     res.status(200).json(result.recordset);
   } catch (err) {
     console.error(err);
@@ -100,7 +108,8 @@ router.post('/:id/strength', async (req, res) => {
     
     const checkWorkout = await pool.request()
       .input('id', workoutId)
-      .query('SELECT id FROM Workouts WHERE id = @id');
+      .input('userId', req.user.userId)
+      .query('SELECT id FROM Workouts WHERE id = @id AND user_id = @userId');
       
     if (checkWorkout.recordset.length === 0) {
       return res.status(404).json({ error: 'Workout not found' });
@@ -121,6 +130,71 @@ router.post('/:id/strength', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to add strength exercise' });
+  }
+});
+/**
+ * @openapi
+ * {
+ * "/api/workouts/{id}/cardio": {
+ * "post": {
+ * "summary": "Add a cardio exercise to a workout",
+ * "parameters": [
+ * { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
+ * ],
+ * "requestBody": {
+ * "required": true,
+ * "content": {
+ * "application/json": {
+ * "schema": {
+ * "type": "object",
+ * "properties": {
+ * "exercise_name": { "type": "string", "example": "Treadmill" },
+ * "duration_minutes": { "type": "integer", "example": 30 },
+ * "distance_km": { "type": "number", "example": 5.2 }
+ * }
+ * }
+ * }
+ * }
+ * },
+ * "responses": {
+ * "201": { "description": "Cardio exercise added" },
+ * "404": { "description": "Workout not found" },
+ * "500": { "description": "Server error" }
+ * }
+ * }
+ * }
+ * }
+ */
+router.post('/:id/cardio', async (req, res) => {
+  const workoutId = req.params.id;
+  const { exercise_name, duration_minutes, distance_km } = req.body;
+
+  try {
+    const pool = await getPool();
+    
+    const checkWorkout = await pool.request()
+      .input('id', workoutId)
+      .input('userId', req.user.userId)
+      .query('SELECT id FROM Workouts WHERE id = @id AND user_id = @userId');
+      
+    if (checkWorkout.recordset.length === 0) {
+      return res.status(404).json({ error: 'Workout not found' });
+    }
+
+    await pool.request()
+      .input('workout_id', workoutId)
+      .input('exercise_name', exercise_name)
+      .input('duration_minutes', duration_minutes)
+      .input('distance_km', distance_km)
+      .query(`
+        INSERT INTO Cardio_Logs (workout_id, exercise_name, duration_minutes, distance_km) 
+        VALUES (@workout_id, @exercise_name, @duration_minutes, @distance_km)
+      `);
+      
+    res.status(201).json({ message: 'Cardio exercise added successfully!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to add cardio exercise' });
   }
 });
 
@@ -151,8 +225,9 @@ router.get('/:id', async (req, res) => {
     // We run three SELECT statements separated by semicolons in ONE query
     const result = await pool.request()
       .input('id', workoutId)
+      .input('userId', req.user.userId)
       .query(`
-        SELECT * FROM Workouts WHERE id = @id;
+        SELECT * FROM Workouts WHERE id = @id AND user_id = @userId;
         SELECT * FROM Strength_Logs WHERE workout_id = @id;
         SELECT * FROM Cardio_Logs WHERE workout_id = @id;
       `);
@@ -208,11 +283,8 @@ router.delete('/:id', async (req, res) => {
     // Attempt to delete the workout. The OUTPUT clause lets us know if a row was actually deleted.
     const result = await pool.request()
       .input('id', workoutId)
-      .query(`
-        DELETE FROM Workouts 
-        OUTPUT deleted.id 
-        WHERE id = @id
-      `);
+      .input('userId', req.user.userId)
+      .query(`DELETE FROM Workouts OUTPUT deleted.id WHERE id = @id AND user_id = @userId`);
 
     // If no rows were outputted, the ID didn't exist
     if (result.recordset.length === 0) {

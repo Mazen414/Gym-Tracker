@@ -1,5 +1,24 @@
+// --- SECURITY CHECK ---
+const token = localStorage.getItem('gym_token');
+if (!token) {
+    window.location.href = 'login.html';
+}
+
+function logout() {
+    localStorage.removeItem('gym_token');
+    localStorage.removeItem('gym_username');
+    window.location.href = 'login.html';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const username = localStorage.getItem('gym_username');
+    if (username) {
+        document.getElementById('user-greeting').innerText = `Hello, ${username}!`;
+    }
+});
+
 // --- 1. DEFINE TEMPLATES & GLOBAL STATE ---
-let editingExerciseId = null; // Keeps track of what we are editing
+let editingExerciseId = null;
 
 const strengthFormHTML = `
     <div class="form-group">
@@ -55,7 +74,16 @@ async function fetchWorkouts() {
     const targetSelect = document.getElementById('target-workout');
     
     try {
-        const response = await fetch('/api/workouts'); 
+        const response = await fetch('/api/workouts', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }); 
+        
+        // If token is invalid/expired, log out automatically
+        if (response.status === 401 || response.status === 403) {
+            logout();
+            return;
+        }
+
         const basicWorkouts = await response.json();
 
         workoutList.innerHTML = '';
@@ -74,12 +102,13 @@ async function fetchWorkouts() {
             option.textContent = `Workout on ${dateStr} (ID: ${basic.id})`;
             targetSelect.appendChild(option);
 
-            const detailResponse = await fetch(`/api/workouts/${basic.id}`);
+            const detailResponse = await fetch(`/api/workouts/${basic.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const fullWorkout = await detailResponse.json();
 
             let exercisesHTML = '';
             
-            // Render Strength Logs with an Edit button
             fullWorkout.strength_logs.forEach(ex => {
                 exercisesHTML += `
                 <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -88,7 +117,6 @@ async function fetchWorkouts() {
                 </li>`;
             });
             
-            // Render Cardio Logs with an Edit button
             fullWorkout.cardio_logs.forEach(ex => {
                 exercisesHTML += `
                 <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -123,19 +151,14 @@ async function fetchWorkouts() {
 }
 
 // --- 4. PREPARE THE FORM FOR EDITING ---
-// This is triggered when you click the tiny "Edit" button
 function startEdit(exerciseId, type, workoutId, name, val1, val2, val3) {
     editingExerciseId = exerciseId;
-
-    // Change the form dropdowns to match the exercise
     document.getElementById('target-workout').value = workoutId;
+    
     const typeSelect = document.getElementById('exercise-type');
     typeSelect.value = type;
-
-    // Force the correct template to load immediately
     typeSelect.dispatchEvent(new Event('change'));
 
-    // Populate the template with the existing data
     document.getElementById('exercise_name').value = name;
     if (type === 'strength') {
         document.getElementById('sets').value = val1;
@@ -146,12 +169,11 @@ function startEdit(exerciseId, type, workoutId, name, val1, val2, val3) {
         document.getElementById('distance_km').value = val2;
     }
 
-    // Give the user a visual clue that they are editing, not creating
     document.querySelector('#exercise-form button').textContent = 'Update Exercise';
-    document.querySelector('#exercise-form button').style.background = '#f39c12'; // Orange warning color
+    document.querySelector('#exercise-form button').style.background = '#f39c12';
 }
 
-// --- 5. SAVE (CREATE OR UPDATE) EXERCISE ---
+// --- 5. SAVE EXERCISE ---
 async function saveExercise(e) {
     e.preventDefault();
 
@@ -160,9 +182,8 @@ async function saveExercise(e) {
     
     let payload = { exercise_name: document.getElementById('exercise_name').value };
     let endpoint = `/api/workouts/${workoutId}/${currentType}`;
-    let method = 'POST'; // Default to creating a new record
+    let method = 'POST';
 
-    // If we are holding an ID in memory, change to Update Mode
     if (editingExerciseId) {
         method = 'PUT';
         endpoint += `/${editingExerciseId}`;
@@ -180,17 +201,18 @@ async function saveExercise(e) {
     try {
         const response = await fetch(endpoint, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
             body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            // Reset the form styling back to normal
             editingExerciseId = null;
             document.querySelector('#exercise-form button').textContent = 'Save Exercise';
-            document.querySelector('#exercise-form button').style.background = '#e74c3c'; // Back to red
+            document.querySelector('#exercise-form button').style.background = '#e74c3c';
             
-            // Clear inputs
             document.getElementById('exercise_name').value = '';
             if (currentType === 'strength') {
                 document.getElementById('sets').value = '';
@@ -219,7 +241,10 @@ async function createWorkout(e) {
     try {
         const response = await fetch('/api/workouts', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
             body: JSON.stringify({ date: dateInput, notes: notesInput })
         });
         if (response.ok) {
@@ -233,7 +258,10 @@ async function createWorkout(e) {
 async function deleteWorkout(id) {
     if (!confirm('Are you sure you want to delete this workout and all its exercises?')) return; 
     try {
-        const response = await fetch(`/api/workouts/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/workouts/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (response.ok) fetchWorkouts();
     } catch (err) { console.error(err); }
 }
